@@ -109,64 +109,6 @@ create table WorksIn(
 	constraint WorksIn_fk2 foreign key (SID) references Staff(SID)
 );
 
-create database landscaping;
-use landscaping;
-
-create table Gardener(
-	GID int not null auto_increment,
-	Name varchar(20) not null,
-	DoB date,
-	Address varchar(50),
-	Mobile bigint,
-	DoJ date,
-	primary key (GID)
-);
-
-create table Attendance_log(
-	AID int not null auto_increment,
-	Date date,
-	GID int not null,
-	primary key (AID),
-	constraint Attendance_log_fk foreign key (GID) references Gardener(GID)
-);
-
-create table Campus_Area(
-	CID int not null auto_increment,
-	Field_Area float not null,
-	Location varchar(20),
-	Flora_type varchar(20),
-	primary key (CID)
-);
-
-create table Roster(
-	GID int not null,
-	CID int not null,
-	Start_Date date not null,
-	End_Date date not null,
-	primary key (GID, CID, Start_Date),
-	constraint Roster_fk1 foreign key (GID) references Gardener(GID),
-	constraint Roster_fk2 foreign key (CID) references Campus_Area(CID)
-);
-
-create table Equipment(
-	EID int not null auto_increment,
-	Type varchar(20),
-	needsRepair varchar(20),
-	CID int not null,
-	primary key (EID),
-	constraint Equipment_fk foreign key (CID) references Campus_Area(CID)
-);
-
-create table Request(
-	RID int not null auto_increment,
-	Request_by varchar(20),
-	isFinished char,
-	Date date,
-	CID int not null,
-	primary key (RID),
-	constraint Request_fk foreign key (CID) references Campus_Area(CID)
-);
-
 create database market;
 use market;
 
@@ -312,32 +254,24 @@ DELIMITER ;
 
 
 ----------MARKET------------
--- 1.Current shop details of different areas of the campus
-SELECT Shopkeeper.SKID, Shopkeeper.Name,
-Plot.PID, Plot.Location, Plot.Rent, 
-Shop.Category, Shop.Start_Date, Shop.License_Period, Shop.Extension_Period, Shop.Pending_Charge, Shop.Performance 
-FROM Shop 
-INNER JOIN Shopkeeper ON Shopkeeper.SKID = Shop.SKID
-INNER JOIN Plot ON Plot.PID = Shop.PID;
-
--- 2.Details of shop keepers and their security pass validity
+-- 1.Details of shop keepers and their security pass validity
 SELECT * FROM Shopkeeper;  
 
--- 3.Reminders for expiring license agreement period
+-- 2.Reminders for expiring license agreement period
 SELECT SKID, PID, Start_Date, DATEDIFF(DATE_ADD(Start_Date,INTERVAL (License_Period+Extension_Period) MONTH), CURDATE()) as Diff FROM Shop
 WHERE DATEDIFF(DATE_ADD(Start_Date,INTERVAL (License_Period+Extension_Period) MONTH), CURDATE()) <= 30;
 -- use php to show "Already Expired" for negative Diff values (lmao)
 
--- 4.Pending charges from each shop
+-- 3.Pending charges from each shop
 SELECT SKID, PID, Start_Date, Pending_Charge
 FROM Shop;
 
 
--- 5.Summary of performances of each shop
+-- 4.Summary of performances of each shop
 SELECT SKID, PID, Start_Date, Performance
 FROM Shop;
 
--- 6.Available plots to open shop
+-- 5.Available plots to open shop
 SELECT * FROM Plot
 WHERE PID NOT IN (
 	SELECT PID FROM Shop
@@ -396,52 +330,6 @@ FROM Guest_House
 INNER JOIN WorksIn ON Guest_House.GUID = WorksIn.GUID
 INNER JOIN Staff ON Staff.SID = WorksIn.SID
 ORDER BY WorksIn.Date DESC;
-
-
-----------Landscaping------------
--- 1.Find the details of active gardeners of a particular area
-SELECT Gardener.GID, Gardener.Name, Gardener.DoB, Gardener.DoJ, Gardener.Address, Gardener.Mobile 
-FROM Gardener
-INNER JOIN Roster on Gardener.GID = Roster.GID
-WHERE Roster.End_Date >= CURDATE() AND Roster.Start_Date <= CURDATE();
-
--- 2. Gardeners attendance details
-DELIMITER $$
-
-CREATE PROCEDURE attendance_log(IN iGID INT)
-BEGIN
-	SELECT GID, AID, Date
-	FROM Attendance_log
-	WHERE GID = iGID;
-
-END $$
-
-DELIMITER ;
-
--- 3. Monthly Duty Roster
-SELECT Gardener.GID, Gardener.Name, Campus_Area.CID, Campus_Area.Location, EXTRACT(YEAR_MONTH FROM Roster.Start_Date) as Roster_Month, Roster.Start_Date, Roster.End_Date
-FROM Gardener
-INNER JOIN Roster ON Gardener.GID = Roster.GID
-INNER JOIN Campus_Area ON Campus_Area.CID = Roster.CID
-GROUP BY Roster_Month;
-
--- 4. Tracking grass cutting requests
-SELECT * FROM Request;
-
--- 5. Tracking equipment repairing status
-SELECT EID, Type, needsRepair FROM Equipment;
-
--- 6. Campus Area with most landscaping requests
-SELECT Campus_Area.CID, Campus_Area.Field_Area, Campus_Area.Location, Campus_Area.Flora_Type,
-(SELECT MAX(tempTable.tempcount) FROM (SELECT COUNT(*) AS tempcount FROM Request GROUP BY CID) tempTable) AS Req_Amt
-FROM Campus_Area 
-WHERE Campus_Area.CID IN(
-SELECT Request.CID FROM Request 
-GROUP BY Request.CID 
-HAVING COUNT(*) = (SELECT MAX(sumTable.tempcount) FROM 
-(SELECT COUNT(*) AS tempcount FROM Request
-GROUP BY CID) sumTable))
-
 
 -- Data Insertion Market
 
@@ -531,131 +419,6 @@ insert into Payment values
 
 select * from Payment;
 
--- Data Insertion Landscaping
-
-insert into Gardener (Name, DoB, Address, Mobile, DoJ) values
-('Kip Leif', '1998-09-01', '88444 Grayhawk Way', 4732974478, '2009-12-18'),
-('Leda Rainard', '1986-01-26', '901 Oxford Trail', 7126406144, '2019-04-27'),
-('Salaidh Gorvette', '1999-09-27', '6673 Oakridge Trail', 2448043215, '2014-12-02'),
-('Camey Mico', '1983-04-08', '4 Anzinger Place', 8642170297, '2013-06-20'),
-('Bev Fairebrother', '1990-03-20', '57 Evergreen Street', 8809804380, '2019-07-08'),
-('Loreen Paterson', '1982-07-21', '15 Hayes Point', 5049770938, '2018-06-16'),
-('Wendeline Ofer', '1985-07-13', '3063 Rieder Plaza', 9047099392, '2013-03-17'),
-('Zaria Popplestone', '1991-08-02', '63901 Division Junction', 5742616069, '2011-12-21'),
-('Kyla Buckwell', '1984-12-05', '2758 Pond Terrace', 8717553147, '2009-04-20'),
-('Neron Barter', '1982-03-28', '20 Moland Junction', 4359862059, '2011-03-06'),
-('Jeniffer Pouton', '1994-06-16', '55 Mendota Hill', 9467422667, '2008-06-23'),
-('Lindon Kilgannon', '1983-04-22', '07 Parkside Point', 4011519350, '2016-04-06'),
-('Welby Corneljes', '1990-12-12', '538 Colorado Way', 8859157445, '2013-11-17'),
-('Madalena Govini', '1988-01-15', '8 Prairieview Drive', 6963811725, '2018-03-07'),
-('Monah Gorgen', '1980-04-07', '64 Shasta Center', 8903626707, '2010-10-31');
-
-select * from Gardener;
-
-insert into Attendance_log (Date, GID) values
-('2021-10-23', 4),
-('2021-11-16', 13),
-('2021-10-26', 10),
-('2021-10-31', 2),
-('2021-11-06', 12),
-('2021-11-25', 14),
-('2021-11-17', 10),
-('2021-10-21', 4),
-('2021-11-02', 14),
-('2021-11-04', 14),
-('2021-10-06', 12),
-('2021-10-29', 13),
-('2021-10-17', 9),
-('2021-10-17', 9),
-('2021-11-02', 9),
-('2021-11-16', 10),
-('2021-10-05', 1),
-('2021-11-26', 9),
-('2021-10-20', 14),
-('2021-11-05', 5),
-('2021-10-10', 10),
-('2021-10-04', 13),
-('2021-11-03', 13),
-('2021-10-18', 12),
-('2021-10-30', 14),
-('2021-10-30', 1),
-('2021-11-26', 10),
-('2021-11-12', 5),
-('2021-10-29', 14),
-('2021-11-21', 15);
-
-select * from Attendance_log;
-
-insert into Campus_Area (Field_Area, Location, Flora_type) values
-(1.1, 'Admin Block', 'Agricultural'),
-(2.4, 'Hostel Block', 'Native'),
-(1.3, 'Cycle Stand', 'Weed'),
-(0.7, 'Canteen Block', 'Weed'),
-(2.6, 'Residential Area 1', 'Weed'),
-(3, 'Residential Area 2', 'Agricultural'),
-(5, 'Tutorial Block 1', 'Native'),
-(0.2, 'Tutorial Block 2', 'Native'),
-(1.9, 'Guest House 1', 'Agricultural'),
-(3, 'Guest House 2', 'Weed');
-
-select * from Campus_Area;
-
-insert into Roster values
-(15, 1, '2021-10-16', '2021-10-26'),
-(9, 6, '2021-10-12', '2021-10-08'),
-(4, 10, '2021-10-11', '2021-10-15'),
-(5, 2, '2021-11-01', '2021-11-07'),
-(9, 10, '2021-10-29', '2021-11-02'),
-(1, 7, '2021-10-17', '2021-10-26'),
-(15, 6, '2021-11-25', '2021-11-28'),
-(11, 5, '2021-10-09', '2021-10-14'),
-(2, 7, '2021-10-10', '2021-10-15'),
-(10, 9, '2021-10-02', '2021-10-05'),
-(11, 5, '2021-11-10', '2021-11-16'),
-(6, 7, '2021-10-20', '2021-10-25'),
-(7, 9, '2021-10-03', '2021-10-10'),
-(4, 10, '2021-11-10', '2021-11-14'),
-(5, 4, '2021-11-19', '2021-11-23');
-
-select * from Roster;
-
-insert into Equipment (Type, needsRepair, CID) values
-('Blades', 'T', 1),
-('Rakes', 'T', 10),
-('Shear', 'T', 3),
-('Mulcher', 'F', 9),
-('Broom', 'F', 3),
-('Blades', 'T', 1),
-('Saw', 'T', 8),
-('Planer', 'F', 3),
-('Hammer', 'T', 8),
-('Saw', 'T', 2),
-('Rakes', 'F', 4),
-('Broom', 'F', 7),
-('Planer', 'T', 7),
-('Shear', 'T', 2),
-('Saw', 'T', 6),
-('Hammer', 'T', 3),
-('Planer', 'F', 10),
-('Shear', 'F', 4),
-('Mulcher', 'F', 5),
-('Blades', 'T', 4);
-
-select * from Equipment;
-
-insert into Request (Request_by, isFinished, Date, CID) values
-('Ninetta Sutterfield', 'T', '2021-10-07', 10),
-('Arturo Seeman', 'T', '2021-10-04', 3),
-('Chilton Moberley', 'F', '2021-10-22', 8),
-('Mirna Trengove', 'F', '2021-10-29', 10),
-('Julius Showalter', 'F', '2021-10-14', 1),
-('Nelson Ezzell', 'T', '2021-11-04', 7),
-('Andrey Jerratsch', 'F', '2021-11-14', 6),
-('Wiley Hillitt', 'T', '2021-10-24', 1),
-('Karl Teulier', 'T', '2021-10-03', 10),
-('Briano Tutchener', 'T', '2021-10-06', 7);
-
-select * from Request;
 
 -- Data Insertion Guest House
 

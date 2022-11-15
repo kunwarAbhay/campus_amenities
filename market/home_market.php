@@ -1,7 +1,21 @@
 <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
 
+<style>
+    body {
+        background-image:  linear-gradient(#dddddd9e , #ffffff03) ,url(../images/market_photo.jpg);
+        background-size: cover;
+        backdrop-filter: blur(1px);
+        height: 100vh;
+        background-position: center;
+    }
+
+    .contributor{
+        background-color: #fff;
+    }
+</style>
+
 <div style='padding: 17px'>
-<h2>Home Market Page</h2>
+<h2 class="text-center bg-white p-4 rounded">Home Market Page</h2>
 </div>
 
 <?php
@@ -26,7 +40,7 @@
     }
 ?>
 
-<div class="col-md-8">
+<div class="container d-flex justify-content-between text-center">
     <a href="admin_login.php" class="btn btn-primary">Admin Login</a>
     <a href="feedback.php" class="btn btn-primary">Feedback</a>
     <a href="payment.php" class="btn btn-primary">Payment</a>

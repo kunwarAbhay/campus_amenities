@@ -1,14 +1,14 @@
 <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
 <style>
     body {
-        background-image:  linear-gradient(#dddddd36 , #ffffff00) ,url(images/bg-iitp.jpg) ,url(images/bg-iitp.jpg);
+        background-image:  linear-gradient(#dddddd36 , #ffffff00) ,url(images/bg-iitp.jpg);
         background-size: cover;
         height: 100vh;
         background-position: center;
     }
 
     .contributor{
-        background-color: #ffffff5c;
+        background-color: #fff;
     }
 </style>
 
